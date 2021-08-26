@@ -10,7 +10,7 @@ spec:
     server: https://kubernetes.default.svc
   project: contoso-projects-project
   source:
-    path: 01-projects/petclinic/cicd
+    path: 01-projects/contoso/cicd
     repoURL: https://github.com/pittar-gitops/gitops-tenant-contoso.git
     targetRevision: main
   syncPolicy:
