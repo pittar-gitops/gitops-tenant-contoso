@@ -8,7 +8,7 @@ spec:
   destination:
     namespace: contoso-dev
     server: https://kubernetes.default.svc
-  project: devteam1-projects-project
+  project: contoso-projects-project
   source:
     path: 01-projects/contoso/dev
     repoURL: https://github.com/pittar-gitops/gitops-tenant-contoso.git
