@@ -5,9 +5,10 @@ namespace: developer-gitops
 
 bases:
   # List of Projects for this tenant in this cluster.
-  - ../../../02-projects/petclinic/cicd
-  - ../../../02-projects/petclinic/dev
-  - ../../../02-projects/petclinic/test
+  - ../../../02-projects/contoso/cicd
+  - ../../../02-projects/contoso/dev
+  - ../../../02-projects/contoso/test
+  - ../../../02-projects/contoso/prod
 
 resources:
   - projects-project.yaml
