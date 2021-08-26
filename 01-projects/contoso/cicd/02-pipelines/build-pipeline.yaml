@@ -1,0 +1,220 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: contoso-devops-pipeline
+spec:
+  workspaces:
+    - name: shared-workspace
+    - name: gitops-source
+  params:
+    - name: app-name
+      type: string
+      description: name of the deployment to be patched
+    - name: git-url
+      type: string
+      description: url of the git repo for the code of deployment
+    - name: git-revision
+      type: string
+      description: revision to be used from repo of the code for deployment
+      default: "main"
+    - name: gitops-url
+      type: string
+      default: "https://github.com/pittar-sandbox/dotnet-contoso-gitops-developers.git"
+    - name: gitops-revision
+      type: string
+      default: "main"
+  tasks:
+    - name: clone-source
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: subdirectory
+          value: ""
+        - name: deleteExisting
+          value: "true"
+        - name: revision
+          value: $(params.git-revision)
+    - name: generate-id
+      taskRef:
+        name: generate-id
+      runAfter:
+        - clone-source
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    - name: build-app
+      taskRef:
+        name: dotnet-cli
+        kind: Task
+      runAfter:
+        - clone-source
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      params:
+        - name: COMMANDS
+          value: ["publish","-c","Release","--source","http://nexus.cicd-tools.svc.cluster.local:8081/service/local/nuget/nuget-gallery"]
+    - name: build-image
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      params:
+        - name: IMAGE
+          value: quay.io/pittar/contoso:latest
+        - name: DOCKERFILE
+          value: ./Containerfile
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+      runAfter:
+        - build-app
+        - generate-id
+    - name: tag-dev
+      taskRef:
+        name: tag-and-push-image
+        kind: Task
+      runAfter:
+        - build-image
+      params:
+        - name: src-image
+          value: "quay.io/pittar/contoso:latest"
+        - name: dest-image
+          value: "quay.io/pittar/contoso"
+        - name: dest-tags
+          value: "$(tasks.generate-id.results.short-commit)-$(tasks.generate-id.results.build-uid),dev"
+    - name: rollout-dev
+      taskRef:
+        name: rollout-restart
+        kind: Task
+      runAfter:
+        - tag-dev
+      params:
+        - name: APP_NAME
+          value: "$(params.app-name)"
+        - name: NAMESPACE
+          value: "contoso-dev"
+    - name: tag-test
+      taskRef:
+        name: tag-and-push-image
+        kind: Task
+      runAfter:
+        - rollout-dev
+      params:
+        - name: src-image
+          value: "quay.io/pittar/contoso:$(tasks.generate-id.results.short-commit)-$(tasks.generate-id.results.build-uid)"
+        - name: dest-image
+          value: "quay.io/pittar/contoso"
+        - name: dest-tags
+          value: "test"
+    - name: rollout-test
+      taskRef:
+        name: rollout-restart
+        kind: Task
+      runAfter:
+        - tag-test
+      params:
+        - name: APP_NAME
+          value: "$(params.app-name)"
+        - name: NAMESPACE
+          value: "contoso-test"
+    - name: clone-gitops-repo
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      runAfter:
+        - rollout-test
+      workspaces:
+        - name: output
+          workspace: gitops-source
+      params:
+        - name: url
+          value: "$(params.gitops-url)"
+        - name: revision
+          value: "$(params.gitops-revision)"
+        - name: deleteExisting
+          value: "true"
+    - name: branch
+      taskRef:
+        name: git
+      runAfter:
+        - clone-gitops-repo
+      workspaces:
+        - name: source
+          workspace: gitops-source
+      params:
+        - name: commands
+          value: |
+            git checkout -b push-$(tasks.generate-id.results.short-commit)-$(tasks.generate-id.results.build-uid)
+    - name: patch-prod
+      taskRef:
+        name: kustomize
+      params:
+        - name: old-image
+          value: contoso
+        - name: new-image
+          value: "quay.io/pittar/contoso"
+        - name: new-tag
+          value: "$(tasks.generate-id.results.short-commit)-$(tasks.generate-id.results.build-uid)"
+        - name: overlaypath
+          value: "overlays/prod/01-namespaces/contoso-prod"
+      runAfter:
+        - branch
+      workspaces:
+        - name: source
+          workspace: gitops-source
+    - name: commit
+      taskRef:
+        name: git
+      runAfter:
+        - patch-prod
+      workspaces:
+        - name: source
+          workspace: gitops-source
+      params:
+        - name: commands
+          value: |
+            tag="$(tasks.generate-id.results.short-commit)-$(tasks.generate-id.results.build-uid)"
+            git status
+            cat ~/.gitconfig
+            git config --global user.email "pipeline@redhat.com"
+            git add -u
+            git commit -m "Pushing image quay.io/pittar/contoso:$tag to production"
+            git push origin push-$tag
+    - name: prod-pr-deploy
+      taskRef:
+        name: task-create-pr
+        kind: Task
+      runAfter:
+        - commit
+      workspaces:
+        - name: source
+          workspace: gitops-source
+      params:
+        - name: title
+          value: Update image to $(tasks.generate-id.results.short-commit)-$(tasks.generate-id.results.build-uid)
+        - name: github-secret
+          value: github-creds-secret
+        - name: body
+          value: |-
+            Please review the following and accept this PR to rollout to PROD.
+
+            Review any security issues with this image here: https://quay.io/pittar/contoso:$(tasks.generate-id.results.short-commit)-$(tasks.generate-id.results.build-uid)
+
+    # - name: run-database-migrations
+    #   taskRef:
+    #     name: dotnet-cli
+    #     kind: Task
+    #   runAfter:
+    #     - build-image
+    #   workspaces:
+    #     - name: source
+    #       workspace: shared-workspace
+    #   params:
+    #     - name: COMMANDS
+    #       value: ["ef","database","update"]

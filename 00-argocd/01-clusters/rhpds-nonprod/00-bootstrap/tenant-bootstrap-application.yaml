@@ -1,0 +1,19 @@
+kind: Application
+apiVersion: argoproj.io/v1alpha1
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  name: contoso-bootstrap
+spec:
+  destination:
+    namespace: developer-gitops
+    server: https://kubernetes.default.svc
+  project: contoso-bootstrap
+  source:
+    path: 00-argocd/01-clusters/rhpds-nonprod/01-projects
+    repoURL: https://github.com/pittar-gitops/gitops-mono-repo-contoso.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true

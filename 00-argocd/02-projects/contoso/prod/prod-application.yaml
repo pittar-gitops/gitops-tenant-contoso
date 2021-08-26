@@ -1,0 +1,19 @@
+kind: Application
+apiVersion: argoproj.io/v1alpha1
+metadata:
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  name: contoso-prod
+spec:
+  destination:
+    namespace: contoso-prod
+    server: https://kubernetes.default.svc
+  project: contoso-projects-project
+  source:
+    path: 01-projects/contoso/prod
+    repoURL: https://github.com/pittar-gitops/gitops-mono-repo-contoso.git
+    targetRevision: main
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true

@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: contoso-cicd
+
+bases:
+  - 01-tasks
+  - 02-pipelines
+#  - 03-triggers
+
+resources:
+  - pipeline-serviceaccount.yaml
