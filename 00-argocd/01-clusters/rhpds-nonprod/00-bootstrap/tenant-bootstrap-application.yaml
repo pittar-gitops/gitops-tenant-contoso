@@ -11,7 +11,7 @@ spec:
   project: tenant-contoso-bootstrap
   source:
     path: 00-argocd/01-clusters/rhpds-nonprod/01-projects
-    repoURL: https://github.com/pittar-gitops/gitops-mono-repo-contoso.git
+    repoURL: https://github.com/pittar-gitops/gitops-tenant-contoso.git
     targetRevision: main
   syncPolicy:
     automated:

@@ -11,7 +11,7 @@ spec:
   project: devteam1-projects-project
   source:
     path: 01-projects/contoso/dev
-    repoURL: https://github.com/pittar-gitops/gitops-mono-repo-contoso.git
+    repoURL: https://github.com/pittar-gitops/gitops-tenant-contoso.git
     targetRevision: main
   syncPolicy:
     automated:
