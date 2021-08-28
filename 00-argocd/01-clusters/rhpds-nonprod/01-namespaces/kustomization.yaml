@@ -5,10 +5,10 @@ namespace: developer-gitops
 
 bases:
   # List of Projects for this tenant in this cluster.
-  - ../../../02-projects/contoso/cicd
-  - ../../../02-projects/contoso/dev
-  - ../../../02-projects/contoso/test
-  - ../../../02-projects/contoso/prod
+  - ../../../02-namespaces/contoso-cicd
+  - ../../../02-namespaces/contoso-dev
+  - ../../../02-namespaces/contoso-test
+  - ../../../02-namespaces/contoso-prod
 
 resources:
   - projects-project.yaml

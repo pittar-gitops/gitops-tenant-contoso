@@ -3,14 +3,18 @@ apiVersion: argoproj.io/v1alpha1
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
+  labels:
+    tenant: contoso
+    argocd.applicaion/type: namespace
+    namespace.env: test
   name: contoso-test
 spec:
   destination:
     namespace: contoso-test
     server: https://kubernetes.default.svc
-  project: contoso-projects-project
+  project: contoso-namespaces
   source:
-    path: 01-projects/contoso/test
+    path: 01-namespaces/contoso-test
     repoURL: https://github.com/pittar-gitops/gitops-tenant-contoso.git
     targetRevision: main
   syncPolicy:

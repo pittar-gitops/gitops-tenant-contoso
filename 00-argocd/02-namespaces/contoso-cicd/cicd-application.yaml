@@ -3,14 +3,18 @@ apiVersion: argoproj.io/v1alpha1
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-  name: contoso-prod
+  labels:
+    tenant: contoso
+    argocd.applicaion/type: namespace
+    namespace.env: cicd
+  name: contoso-cicd
 spec:
   destination:
-    namespace: contoso-prod
+    namespace: contoso-cicd
     server: https://kubernetes.default.svc
-  project: contoso-projects-project
+  project: contoso-namespaces
   source:
-    path: 01-projects/contoso/prod
+    path: 01-namespaces/contoso-cicd
     repoURL: https://github.com/pittar-gitops/gitops-tenant-contoso.git
     targetRevision: main
   syncPolicy:

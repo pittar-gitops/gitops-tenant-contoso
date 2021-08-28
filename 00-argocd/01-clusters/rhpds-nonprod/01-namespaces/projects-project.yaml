@@ -3,7 +3,10 @@ apiVersion: argoproj.io/v1alpha1
 metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "1"
-  name: contoso-projects-project
+  labels:
+    tenant: contoso
+    project.type: namespaces
+  name: contoso-namespaces
 spec:
   clusterResourceWhitelist:
   - group: '*'
