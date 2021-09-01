@@ -13,7 +13,7 @@ spec:
     server: https://kubernetes.default.svc
   project: tenant-contoso-bootstrap
   source:
-    path: 00-argocd/01-clusters/rhpds-nonprod/01-namespaces
+    path: 00-argocd/01-clusters/nonprod/01-namespaces
     repoURL: https://github.com/pittar-gitops/gitops-tenant-contoso.git
     targetRevision: main
   syncPolicy:
