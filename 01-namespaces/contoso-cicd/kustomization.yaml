@@ -6,6 +6,7 @@ namespace: contoso-cicd
 bases:
   - 01-tasks
   - 02-pipelines
+  - 04-pipeline-runs
 #  - 03-triggers
 
 resources:
